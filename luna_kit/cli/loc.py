@@ -27,6 +27,7 @@ class LOCCommand(CLICommand):
             dest = 'override',
             action = 'store_true',
             help = 'Override output file if it already exists without prompt.',
+            default = 'true',
         )
         
         parser.add_argument(
@@ -41,7 +42,8 @@ class LOCCommand(CLICommand):
             '-i', '--indent',
             dest = 'indent',
             type = int,
-            help = 'Json indent.'
+            help = 'Json indent.',
+            default = 4,
         )
         
     
@@ -53,7 +55,8 @@ class LOCCommand(CLICommand):
         import csv
         
         for file in args.files:
-            output: str = f'{{name}}.{args.format}'
+            output: str = f'{os.path.dirname(file)}/{{name}}.{args.format}'
+            
             if args.output:
                 output = args.output
             

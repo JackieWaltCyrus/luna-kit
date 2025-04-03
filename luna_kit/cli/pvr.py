@@ -44,6 +44,7 @@ class PVRCommand(CLICommand):
             dest = 'yes',
             action = 'store_true',
             help = 'Override files without confirmation.',
+            default = 'true',
         )
         
         confirm.add_argument(
@@ -64,9 +65,16 @@ class PVRCommand(CLICommand):
         def save_image(file: str, ):
             console.print(f'reading [yellow]{file}[/]')
             pvr = PVR(file)
-            output = args.output
             name = os.path.splitext(os.path.basename(file))[0]
             dir = os.path.dirname(file)
+
+            output = dir
+
+            if args.output:
+                output = args.output
+            else:
+                args.output = output
+
             if output:
                 output = safe_format(
                     output,

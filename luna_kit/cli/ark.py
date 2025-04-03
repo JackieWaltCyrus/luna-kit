@@ -27,6 +27,7 @@ class ARKParser(CLICommand):
             dest = 'separate_folders',
             help = 'Output each .ark file in separate folders',
             action = 'store_true',
+            default = 'true',
         )
         
         parser.add_argument(
@@ -98,17 +99,23 @@ class ARKParser(CLICommand):
         
         if len(files) == 1:
             console.print(f'Opening: [yellow]{files[0]}[/]')
+
             with ARK(files[0]) as ark_file:
                 if args.data_version:
                     version = ark_file.data_version
                     if version:
                         versions[files[0]] = version
                 if not args.data_version or args.output:
+                    output = os.path.join(os.path.dirname(files[0]), os.path.splitext(os.path.basename(files[0]))[0])
+
                     failed = extract_all(ark_file, output)
         else:
             failed: dict[str, list[str]] = {}
             for filename in files:
                 filename: str
+
+                output = os.path.dirname(filename)
+
                 if args.separate_folders:
                     path = os.path.join(output, os.path.splitext(os.path.basename(filename))[0])
                 else:
