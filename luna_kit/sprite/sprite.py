@@ -1,9 +1,13 @@
+import os
 from typing import Type
 
-from .parser import SpriteParser
-from .types import SpriteType, SpriteComment, SpriteElement, SpriteBlock, SpriteName, SpriteHex, SpriteStr, SpriteDocument
 from ..file_utils import PathOrTextFile
-from .spriteobjects import get_object
+from .parser import SpriteParser
+from .spriteobjects import (Animation, Frame, Image, Modules, Version,
+                            get_object)
+from .types import (SpriteBlock, SpriteComment, SpriteDocument, SpriteElement,
+                    SpriteHex, SpriteName, SpriteStr, SpriteType)
+
 
 class Sprite:
     def __init__(
@@ -13,10 +17,11 @@ class Sprite:
         parser_class: Type[SpriteParser] = SpriteParser,
     ):
         self.filename = ''
-        self.images = []
-        self.modules = []
-        self.frames = []
-        self.anims = []
+        self.version = 1
+        self.images: list[Image] = []
+        self.modules: list[Modules] = []
+        self.frames: list[Frame] = []
+        self.animations: list[Animation] = []
         
         if file is not None:
             self.read(file, parser_class = parser_class)
@@ -28,10 +33,11 @@ class Sprite:
         parser_class: Type[SpriteParser] = SpriteParser,
     ):
         self.filename = ''
+        self.version = 1
         self.images = []
         self.modules = []
         self.frames = []
-        self.anims = []
+        self.animations = []
         
         sprite_doc = parser_class(file).elements
         
@@ -54,8 +60,20 @@ class Sprite:
             if isinstance(filtered[0], SpriteName):
                 obj = get_object(filtered)
                 if obj is not None:
-                    print(obj)
-                    self.objects.append(obj)
+                    match obj.TAG:
+                        case Image.TAG:
+                            self.images.append(obj)
+                        case Modules.TAG:
+                            self.modules.append(obj)
+                        case Frame.TAG:
+                            self.frames.append(obj)
+                        case Animation.TAG:
+                            self.animations.append(obj)
+                        case Version.TAG:
+                            self.version = obj.version
+                        case _:
+                            print(f'unknown tag: {obj.TAG}')
+                            self.objects.append(obj)
     
     
     def _filter_sprite_element(self, element: SpriteElement):
