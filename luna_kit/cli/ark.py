@@ -25,9 +25,8 @@ class ARKParser(CLICommand):
         parser.add_argument(
             '-s', '--separate-folders',
             dest = 'separate_folders',
-            help = 'Output each .ark file in separate folders',
+            help = 'Output each .ark file in not separate folders',
             action = 'store_true',
-            default = 'true',
         )
         
         parser.add_argument(
@@ -56,6 +55,13 @@ class ARKParser(CLICommand):
             dest = 'filter_files',
             help = 'filter files from ark files',
         )
+
+        parser.add_argument(
+            '-r', '--rename-force',
+            dest = 'rename_force',
+            help = 'if len filter-files 1, rename output file to name input .ark file',
+            action = 'store_true',
+        )
     
     @classmethod
     def run_command(cls, args: Namespace):
@@ -79,7 +85,7 @@ class ARKParser(CLICommand):
         elif len(files) == 1:
             output = os.path.splitext(os.path.basename(args.files[0]))[0]
         
-        def extract_all(ark_file: ARK, output: str):
+        def extract_all(ark_file: ARK, output: str, ark_name: str):
             failed = []
             
             for file_metadata in track(
@@ -90,7 +96,12 @@ class ARKParser(CLICommand):
                 console.print(f'extracting: [yellow]{file_metadata.full_path}[/yellow]')
                 try:
                     file = ark_file.read_file(file_metadata)
-                    file.save(os.path.join(output, file_metadata.full_path))
+                    name = file_metadata.full_path
+
+                    if args.filter_files and len(args.filter_files) == 1 and args.rename_force:
+                        name = os.path.splitext(ark_name)[0] + os.path.splitext(file_metadata.full_path)[1]
+
+                    file.save(os.path.join(output, name))
                 except Exception as e:
                     if args.ignore_errors:
                         failed.append(file_metadata.full_path)
@@ -113,9 +124,14 @@ class ARKParser(CLICommand):
                     if version:
                         versions[files[0]] = version
                 if not args.data_version or args.output:
-                    output = os.path.join(os.path.dirname(files[0]), os.path.splitext(os.path.basename(files[0]))[0])
+                    output = os.path.dirname(files[0])
 
-                    failed = extract_all(ark_file, output)
+                    if args.separate_folders:
+                        path = output
+                    else:
+                        path = os.path.join(output, os.path.splitext(os.path.basename(files[0]))[0])
+
+                    failed = extract_all(ark_file, path, files[0])
         else:
             failed: dict[str, list[str]] = {}
             for filename in files:
@@ -124,9 +140,9 @@ class ARKParser(CLICommand):
                 output = os.path.dirname(filename)
 
                 if args.separate_folders:
-                    path = os.path.join(output, os.path.splitext(os.path.basename(filename))[0])
-                else:
                     path = output
+                else:
+                    path = os.path.join(output, os.path.splitext(os.path.basename(filename))[0])
                 
                 console.print(f'Opening: [yellow]{filename}[/]')
                 with ARK(filename, args.filter_files) as ark_file:
@@ -135,7 +151,7 @@ class ARKParser(CLICommand):
                         if version:
                             versions[filename] = version
                     if not args.data_version or args.output:
-                        failed[filename] = extract_all(ark_file, path)
+                        failed[filename] = extract_all(ark_file, path, filename)
             
             if len(failed) > 0:
                 for arkfile, files in failed.items():
