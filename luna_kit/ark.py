@@ -230,6 +230,7 @@ class ARK():
     def __init__(
         self,
         file: str | bytes | bytearray | BinaryIO | None = None,
+        filter: list[str] | None = None,
     ) -> None:
         """Extract `.ark` files.
         
@@ -246,6 +247,7 @@ class ARK():
         self._files = ARKMetadataCollection()
         self.__files_block = io.BytesIO()
         self.header = Header()
+        self.filter = filter;
         
         self.file = file
     
@@ -453,7 +455,9 @@ class ARK():
                 raw_metadata[offset : offset + metadata_size]
             )
             
-            
+            if self.filter and read_ascii_string(file_result.filename) not in self.filter:
+                continue
+
             result.append(FileMetadata(
                 filename = read_ascii_string(file_result.filename),
                 pathname = read_ascii_string(file_result.pathname),

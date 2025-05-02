@@ -23,7 +23,7 @@ class ARKParser(CLICommand):
         )
         
         parser.add_argument(
-            '-f', '--separate-folders',
+            '-s', '--separate-folders',
             dest = 'separate_folders',
             help = 'Output each .ark file in separate folders',
             action = 'store_true',
@@ -48,6 +48,13 @@ class ARKParser(CLICommand):
             dest = 'data_version',
             action = 'store_true',
             help = 'print data version from ark files',
+        )
+
+        parser.add_argument(
+            '-f', '--filter-files',
+            nargs = '+',
+            dest = 'filter_files',
+            help = 'filter files from ark files',
         )
     
     @classmethod
@@ -100,7 +107,7 @@ class ARKParser(CLICommand):
         if len(files) == 1:
             console.print(f'Opening: [yellow]{files[0]}[/]')
 
-            with ARK(files[0]) as ark_file:
+            with ARK(files[0], args.filter_files) as ark_file:
                 if args.data_version:
                     version = ark_file.data_version
                     if version:
@@ -122,7 +129,7 @@ class ARKParser(CLICommand):
                     path = output
                 
                 console.print(f'Opening: [yellow]{filename}[/]')
-                with ARK(filename) as ark_file:
+                with ARK(filename, args.filter_files) as ark_file:
                     if args.data_version:
                         version = ark_file.data_version
                         if version:
